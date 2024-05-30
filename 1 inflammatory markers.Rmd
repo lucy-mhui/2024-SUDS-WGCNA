@@ -1,0 +1,490 @@
+---
+title: "1 inflammatory markers"
+output:
+  html_document: 
+    message: FALSE
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Install and load required packages
+if (!requireNamespace("visdat", quietly = TRUE)) {
+  install.packages("visdat")
+}
+if (!requireNamespace("mice", quietly = TRUE)) {
+  install.packages("mice")
+}
+
+library(visdat)
+library(mice)
+```
+
+# 1. Inflammatory markers
+
+## 1.a MDD
+
+The baseline MDD inflammatory marker data is contained in the file `CBN01_CYTORAWL_DATA_Z3_01_V01_TRTMT.csv` that comes with CAN-BIND-1.
+
+```{r}
+# load package
+library(WGCNA)
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+MDDinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_TRTMT.csv")
+```
+
+`MDDinfData` contains 211 subjects with 34 variables. Each row corresponds to a patient and column to a inflammatory marker. We now remove auxiliary data.
+
+```{r}
+MDDinfData1 = as.data.frame(MDDinfData[,-c(1:4,34)])
+rownames(MDDinfData1) = MDDinfData$SUBJLABEL
+```
+
+We first check for inflammatory markers and subjects with too many missing values:
+
+```{r}
+gsg = goodSamplesGenes(MDDinfData1, verbose=3)
+# gsg$goodGenes
+# gsg$goodSamples
+# false <- which(!gsg$goodSamples)
+# print(false)
+```
+
+Visualize the missing data:
+
+```{r}
+vis_miss(MDDinfData1)
+```
+
+Remove patients that are missing all the inflammatory data.
+
+```{r}
+if (!gsg$allOK) {
+  MDDinfData2 <- MDDinfData1[gsg$goodSamples, gsg$goodGenes]
+}
+
+# MDDinfData2 = MDDinfData1[!apply(MDDinfData1, 1, function(x) all(is.na(x))), ]
+vis_miss(MDDinfData2)
+```
+
+Apply multiple imputation by chained equation MICE method to impute the rest of the missing data.
+
+*Description:* creates multiple imputed datasets, performs analysis on each, and combines results
+
+*Pros:* (1) accounts for uncertainty in imputations. (2) maintains variability and relationships in data. (3) handles MCAR and MAR missing data types.
+
+*Cons:* (1) complex and computationally intensive. (2) requires careful consideration of model parameters
+
+```{r, include = FALSE}
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(MDDinfData2, m = 5, method = 'pmm', maxit = 50, seed = 500)
+#summary(impute)
+MDDinfData3 = complete(impute)
+vis_miss(MDDinfData3)
+```
+
+Now we have 205 patients with 29 inflammatory markers.
+
+Cluster the patients to see if there are obvious outliers.
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(MDDinfData3), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+Choose a height cut that will remove the offending sample. 5000.
+
+```{r}
+# plot line to show cut
+# abline(h=5000, col="red")
+# determine cluster under the line
+clust = cutreeStatic(sampleTree, cutHeight = 5000, minSize = 10)
+# table(clust)
+# clust 1 contains the samples we want to keep.
+keepSamples = (clust==1)
+MDDinfData3 = MDDinfData3[keepSamples, ]
+nGenes = ncol(MDDinfData3)
+nSamples = nrow(MDDinfData3)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(MDDinfData3), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+We will be removing 10 patients. We now have 195 patients with 29 inflammatory markers.
+
+Z score the dataframe.
+
+```{r}
+MDDinfData4=as.data.frame(scale(MDDinfData3))
+```
+
+
+Remove outliers within each inflammatory marker
+
+```{r, include = FALSE}
+# boxplot
+boxplot_data=list()
+for(col in colnames(MDDinfData4)){
+  boxplot_data[[col]]=boxplot(MDDinfData4[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+MDDinfData5=apply(MDDinfData4,2,remove_outliers)
+MDDinfData5=as.data.frame(MDDinfData5)
+
+# visualizing missing data
+vis_miss(MDDinfData5)
+
+# perform multiple imputation
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(MDDinfData5, m = 5, method = 'pmm', maxit = 50, seed = 500)
+#summary(impute)
+MDDinfData5 = complete(impute)
+vis_miss(MDDinfData5)
+
+```
+
+
+### Ignore below
+Transform data according to CAN-BIND-1 instructions.
+
+```{r}
+# log10 (il1b, il1ra, il4, il17, eotaxin, g-csf, mcp-1, tnfa, il13, ip10, fgf, rantes)
+columns_to_transform <- c("Hu.IL.1b..39.", "Hu.IL.1ra..25.", "Hu.IL.4..52.", "Hu.IL.7..74.", "Hu.Eotaxin..43.", "Hu.G.CSF..57.", "Hu.MCP.1.MCAF...53.", "Hu.TNF.a..36.", "Hu.IL.13..51.", "Hu.IP.10..48.", "Hu.FGF.basic..44.", "Hu.RANTES..37.")
+MDDinfData3[, columns_to_transform] <- log10(MDDinfData3[, columns_to_transform] + 1)
+
+# x^0.25 (il6, il12, il7, vegf)
+columns_to_transform <- c("Hu.IL.6..19.", "Hu.IL.12.p70...75.", "Hu.IL.7..74.", "Hu.VEGF..45.")
+MDDinfData3[, columns_to_transform] <- MDDinfData3[, columns_to_transform]^0.25
+
+# x^0.5 (il8, il9, il2)
+columns_to_transform <- c("Hu.IL.8..54.", "Hu.IL.9..77.", "Hu.IL.2..38.")
+MDDinfData3[, columns_to_transform] <- MDDinfData3[, columns_to_transform]^0.5
+
+# log2 (il10, gm-csf, il5, il15, mip-1b)
+columns_to_transform <- c("Hu.IL.10..56.", "Hu.GM.CSF..34.", "Hu.IL.5..33.", "Hu.IL.15..73.", "Hu.MIP.1b..18.")
+MDDinfData3[, columns_to_transform] <- log2(MDDinfData3[, columns_to_transform]+1)
+
+# x^0.33 (ifng, mip-1a)
+columns_to_transform <- c("Hu.IFN.g..21.", "Hu.MCP.1.MCAF...53.")
+MDDinfData3[, columns_to_transform] <- MDDinfData3[, columns_to_transform]^0.33
+
+# x^0.08333 (PDGF)
+columns_to_transform <- c("Hu.PDGF.bb..47.")
+MDDinfData3[, columns_to_transform] <- MDDinfData3[, columns_to_transform]^0.08333
+```
+
+Visualize the distribution 
+
+```{r}
+# histogram
+#num_cols <- 6  # Number of columns
+#num_rows <- ceiling(ncol(MDDinfData4) / num_cols)  # Number of rows
+#par(mfrow = c(num_rows, num_cols))
+
+#for (col in colnames(MDDinfData4)) {
+#  if (is.numeric(MDDinfData4[[col]])) {
+#    # Create a histogram for the current column
+#    hist(MDDinfData4[[col]], main = paste("Histogram of", col), xlab = col, ylab = #"Frequency", col = "lightblue", border = "black")
+#  } else {
+#    message(paste("Column", col, "is not numeric and will be skipped."))
+#  }
+#}
+
+#par(mfrow = c(1, 1))
+
+# qq-plot
+#generate_qq_plot <- function(MDDinfData4, col_name) {
+#  ggplot(MDDinfData4, aes(sample = MDDinfData4[[col_name]])) +
+#    stat_qq() +
+#    stat_qq_line() +
+#    ggtitle(paste("QQ Plot of", col_name)) +
+#    xlab("Theoretical Quantiles") +
+#    ylab("Sample Quantiles") +
+#    theme_minimal()
+#}
+
+#plot_list <- list()
+
+#for (col in colnames(MDDinfData4)) {
+#  if (is.numeric(MDDinfData4[[col]])) {
+#    plot_list[[col]] <- generate_qq_plot(MDDinfData4, col)
+#  } else {
+#    message(paste("Column", col, "is not numeric and will be skipped."))
+#  }
+#}
+
+#grid.arrange(grobs = plot_list, ncol = 6)
+
+# shapiro wilk test
+#num_columns <- ncol(MDDinfData4)
+#significant_columns <- list()
+
+#for (i in 1:num_columns) {
+#  result <- shapiro.test(MDDinfData4[[i]])
+#  if (result$p.value < 0.05) {
+#    significant_columns[[i]] <- list(column_number = i, p_value = result$p.value)
+#  }
+#}
+
+#cat("Columns with p < 0.05:\n")
+#for (i in seq_along(significant_columns)) {
+#  if (!is.null(significant_columns[[i]])) {
+#    cat("Column Number:", significant_columns[[i]]$column_number, ", p-value:", #significant_columns[[i]]$p_value, "\n")
+#  }
+#}
+
+#IFABP
+#CRP
+#Hu.IL.1b..39.
+#Hu.IL.1ra..25.
+#Hu.IL.2..38.
+#Hu.IL.5..33.
+#$Hu.IL.6..19.
+#$Hu.IL.7..74.
+#$Hu.IL.8..54.
+#$Hu.IL.10..56.
+#$Hu.IL.12.p70...75.
+#$Hu.IL.13..51.
+#$Hu.IL.15..73.
+#$Hu.IL.17..76.
+#$Hu.G.CSF..57.
+#$Hu.GM.CSF..34.
+#$Hu.IFN.g..21.
+#$Hu.IP.10..48.
+#$Hu.MCP.1.MCAF...53.
+#$Hu.MIP.1a..55.
+#$Hu.PDGF.bb..47.
+#$Hu.MIP.1b..18.
+#$Hu.RANTES..37.
+#$Hu.VEGF..45.
+
+```
+
+Transform the data frames (ignore)
+
+```{r}
+#MDDinfData4=MDDinfData3
+#MDDinfData4$IFABP=log10(MDDinfData3$IFABP)
+#MDDinfData4$CRP=log10(MDDinfData3$CRP)
+#MDDinfData4$Hu.IL.1b..39.=log10(MDDinfData3$Hu.IL.1b..39.)
+#MDDinfData4$Hu.IL.1ra..25.=log10(MDDinfData3$Hu.IL.1ra..25.)
+#MDDinfData4$Hu.IL.2..38.=log10(MDDinfData3$Hu.IL.2..38.)
+#MDDinfData4$Hu.IL.5..33.=log(MDDinfData3$Hu.IL.5..33.)
+#MDDinfData4$Hu.IL.6..19.=log10(MDDinfData3$Hu.IL.6..19.)
+#MDDinfData4$Hu.IL.7..74.=log10(MDDinfData3$Hu.IL.7..74.)
+#MDDinfData4$Hu.IL.8..54.=log10(MDDinfData3$Hu.IL.8..54.)
+#MDDinfData4$Hu.IL.10..56.=log10(MDDinfData3$Hu.IL.10..56.)
+#MDDinfData4$Hu.IL.12.p70...75.=log10(MDDinfData3$Hu.IL.12.p70...75.)
+#MDDinfData4$Hu.IL.13..51.=log10(MDDinfData3$Hu.IL.13..51.)
+#MDDinfData4$Hu.IL.15..73.=log10(MDDinfData3$Hu.IL.15..73.)
+#MDDinfData4$Hu.IL.17..76.=log10(MDDinfData3$Hu.IL.17..76.)
+#MDDinfData4$Hu.G.CSF..57.=log10(MDDinfData3$Hu.G.CSF..57.)
+#MDDinfData4$Hu.GM.CSF..34.=log10(MDDinfData3$Hu.GM.CSF..34.)
+#MDDinfData4$Hu.IFN.g..21.=log10(MDDinfData3$Hu.IFN.g..21.)
+#MDDinfData4$Hu.IP.10..48.=log10(MDDinfData3$Hu.IP.10..48.)
+#MDDinfData4$Hu.MCP.1.MCAF...53.=log10(MDDinfData3$Hu.MCP.1.MCAF...53.)
+#MDDinfData4$Hu.MIP.1a..55.=log10(MDDinfData3$Hu.MIP.1a..55.)
+#MDDinfData4$Hu.PDGF.bb..47.=log10(MDDinfData3$Hu.PDGF.bb..47.)
+#MDDinfData4$Hu.MIP.1b..18.=log10(MDDinfData3$Hu.MIP.1b..18.)
+#MDDinfData4$Hu.RANTES..37.=log10(MDDinfData3$Hu.RANTES..37.)
+#MDDinfData4$Hu.VEGF..45.=log10(MDDinfData3$Hu.VEGF..45.)
+
+```
+
+Perform quantile normalization to remove variation
+
+```{r}
+# Quantile normalization function
+#quantile_normalize <- function(MDDinfData3) {
+#  MDDinfData4 <- normalize.quantiles(as.matrix(MDDinfData3))
+#  MDDinfData4 <- as.data.frame(MDDinfData4)
+#  rownames(MDDinfData4) <- rownames(MDDinfData3)
+#  colnames(MDDinfData4) <- colnames(MDDinfData3)
+#  return(MDDinfData4)
+#}
+
+# Applying quantile normalization
+#MDDinfData4 <- quantile_normalize(MDDinfData3)
+
+# qqplot
+#generate_qq_plot <- function(MDDinfData4, col_name) {
+#  ggplot(MDDinfData4, aes(sample = MDDinfData4[[col_name]])) +
+#    stat_qq() +
+#    stat_qq_line() +
+#    ggtitle(paste("QQ Plot of", col_name)) +
+#    xlab("Theoretical Quantiles") +
+#    ylab("Sample Quantiles") +
+#    theme_minimal()
+#}
+
+#plot_list <- list()
+
+#for (col in colnames(MDDinfData4)) {
+#  if (is.numeric(MDDinfData4[[col]])) {
+#    plot_list[[col]] <- generate_qq_plot(MDDinfData4, col)
+#  } else {
+#    message(paste("Column", col, "is not numeric and will be skipped."))
+#  }
+#}
+
+#grid.arrange(grobs = plot_list, ncol = 6)
+
+```
+
+## 1.b Control
+
+The baseline control inflammatory marker data is contained in the file `CBN01_CYTORAWL_DATA_Z3_01_V01_CNTRL.csv` that comes with CAN-BIND-1.
+
+```{r}
+# load package
+library(WGCNA)
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+CntrlinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_CNTRL.csv")
+```
+
+`CntrlinfData` contains 112 subjects with 34 variables. Each row corresponds to a participant and column to a inflammatory marker. We now remove auxiliary data.
+
+```{r}
+CntrlinfData1 = as.data.frame(CntrlinfData[,-c(1:4,34)])
+rownames(CntrlinfData1) = CntrlinfData$SUBJLABEL
+```
+
+We first check for inflammatory markers and subjects with too many missing values:
+
+```{r}
+gsg = goodSamplesGenes(CntrlinfData1, verbose=3)
+# gsg$goodGenes
+# gsg$goodSamples
+# false <- which(!gsg$goodSamples)
+# print(false)
+```
+
+Visualize the missing data:
+
+```{r}
+vis_miss(CntrlinfData1)
+```
+
+Remove patients that are missing all the inflammatory data.
+
+```{r}
+CntrlinfData2 = CntrlinfData1[!apply(CntrlinfData1, 1, function(x) all(is.na(x))), ]
+#vis_miss(CntrlinfData2)
+```
+
+Apply multiple imputation by chained equation MICE method to impute the rest of the missing data.
+
+*Description:* creates multiple imputed datasets, performs analysis on each, and combines results
+
+*Pros:* (1) accounts for uncertainty in imputations. (2) maintains variability and relationships in data. (3) handles MCAR and MAR missing data types.
+
+*Cons:* (1) complex and computationally intensive. (2) requires careful consideration of model parameters
+
+```{r, include=FALSE}
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(CntrlinfData2, m = 5, method = 'pmm', maxit = 50, seed = 500)
+#summary(impute)
+CntrlinfData3 = complete(impute)
+#vis_miss(CntrlinfData3)
+```
+
+Now we have 102 patients with 29 inflammatory markers.
+
+Cluster the participants to see if there are obvious outliers.
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(CntrlinfData3), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+Choose a height cut that will remove the offending sample. 5000.
+
+```{r}
+# plot line to show cut
+# abline(h=5000, col="red")
+# determine cluster under the line
+clust = cutreeStatic(sampleTree, cutHeight = 5000, minSize = 10)
+# table(clust)
+# clust 1 contains the samples we want to keep.
+keepSamples = (clust==1)
+CntrlinfData4 = CntrlinfData3[keepSamples, ]
+nGenes = ncol(CntrlinfData4)
+nSamples = nrow(CntrlinfData4)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(CntrlinfData4), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+We will be removing 8 patients. We now have 94 patients with 29 inflammatory markers.
+
+Z score the dataframe.
+
+```{r}
+CntrlinfData4=as.data.frame(scale(CntrlinfData4))
+```
+
+
+Remove outliers within each inflammatory marker
+
+```{r, include=FALSE}
+# boxplot
+boxplot_data=list()
+for(col in colnames(CntrlinfData4)){
+  boxplot_data[[col]]=boxplot(CntrlinfData4[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+CntrlinfData5=apply(CntrlinfData4,2,remove_outliers)
+CntrlinfData5=as.data.frame(CntrlinfData5)
+
+# visualizing missing data
+vis_miss(CntrlinfData5)
+
+# perform multiple imputation
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(CntrlinfData5, m = 5, method = 'pmm', maxit = 50, seed = 500)
+#summary(impute)
+CntrlinfData5 = complete(impute)
+vis_miss(CntrlinfData5)
+
+```
+
+
