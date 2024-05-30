@@ -1,0 +1,373 @@
+---
+title: "1 sex"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MDD male
+
+## clean dataframe
+
+```{r}
+# load package
+library(WGCNA)
+library(visdat)
+library(mice)
+
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+MDDinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_TRTMT.csv")
+MDDsex = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/CBN01_DEMO_DATA_Z3_01_V01_TRTMT.csv")
+merge = merge(MDDinfData, MDDsex, on='SUBJLABEL', how='inner')
+MDDsexinf = as.data.frame(merge[,-c(1:4,34:35,37:50)])
+MDDsexinf = MDDsexinf[1:30]
+rownames(MDDsexinf) = MDDsex$SUBJLABEL
+
+# subset for male
+MDDinfM <- MDDsexinf[MDDsexinf$SEX == 2, -30]
+```
+
+## missing data
+
+```{r}
+gsg = goodSamplesGenes(MDDinfM, verbose=3)
+vis_miss(MDDinfM)
+if (!gsg$allOK) {
+  MDDinfM <- MDDinfM[gsg$goodSamples, gsg$goodGenes]
+}
+vis_miss(MDDinfM)
+```
+
+## outlier removal
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(MDDinfM), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+clust = cutreeStatic(sampleTree, cutHeight = 4000, minSize = 10)
+keepSamples = (clust==1)
+MDDinfM = MDDinfM[keepSamples, ]
+nGenes = ncol(MDDinfM)
+nSamples = nrow(MDDinfM)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(MDDinfM), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+
+## normalize
+
+```{r}
+# z score
+MDDinfM=as.data.frame(scale(MDDinfM))
+
+# boxplot
+boxplot_data=list()
+for(col in colnames(MDDinfM)){
+  boxplot_data[[col]]=boxplot(MDDinfM[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+MDDinfM=apply(MDDinfM,2,remove_outliers)
+MDDinfM=as.data.frame(MDDinfM)
+
+# visualizing missing data
+vis_miss(MDDinfM)
+
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(MDDinfM, m = 5, method = 'pmm', maxit = 50, seed = 500)
+MDDinfM = complete(impute)
+vis_miss(MDDinfM)
+```
+
+# MDD female
+## clean dataframe
+
+```{r}
+# load package
+library(WGCNA)
+library(visdat)
+library(mice)
+
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+MDDinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_TRTMT.csv")
+MDDsex = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/CBN01_DEMO_DATA_Z3_01_V01_TRTMT.csv")
+merge = merge(MDDinfData, MDDsex, on='SUBJLABEL', how='inner')
+MDDsexinf = as.data.frame(merge[,-c(1:4,34:35,37:50)])
+MDDsexinf = MDDsexinf[1:30]
+rownames(MDDsexinf) = MDDsex$SUBJLABEL
+
+# subset for female
+MDDinfF <- MDDsexinf[MDDsexinf$SEX == 1, -30]
+```
+
+## missing data
+
+```{r}
+gsg = goodSamplesGenes(MDDinfF, verbose=3)
+vis_miss(MDDinfF)
+if (!gsg$allOK) {
+  MDDinfF <- MDDinfF[gsg$goodSamples, gsg$goodGenes]
+}
+vis_miss(MDDinfF)
+```
+
+## outlier removal
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(MDDinfF), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+clust = cutreeStatic(sampleTree, cutHeight = 4000, minSize = 10)
+keepSamples = (clust==1)
+MDDinfF = MDDinfF[keepSamples, ]
+nGenes = ncol(MDDinfF)
+nSamples = nrow(MDDinfF)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(MDDinfF), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+
+## normalize
+
+```{r}
+# z score
+MDDinfF=as.data.frame(scale(MDDinfF))
+
+# boxplot
+boxplot_data=list()
+for(col in colnames(MDDinfF)){
+  boxplot_data[[col]]=boxplot(MDDinfF[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+MDDinfF=apply(MDDinfF,2,remove_outliers)
+MDDinfF=as.data.frame(MDDinfF)
+
+# visualizing missing data
+vis_miss(MDDinfF)
+
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(MDDinfF, m = 5, method = 'pmm', maxit = 50, seed = 500)
+MDDinfF = complete(impute)
+vis_miss(MDDinfF)
+```
+
+# Control male
+
+## clean dataframe
+```{r}
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+CntrlinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_CNTRL.csv")
+Cntrlsex = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/CBN01_DEMO_DATA_Z3_01_V01_CNTRL.csv")
+merge = merge(CntrlinfData, Cntrlsex, on='SUBJLABEL', how='inner')
+Cntrlsexinf = as.data.frame(merge[,-c(1:4,34:35,37:50)])
+Cntrlsexinf = Cntrlsexinf[1:30]
+rownames(Cntrlsexinf) = Cntrlsex$SUBJLABEL
+
+# subset for male
+CntrlinfM <- Cntrlsexinf[Cntrlsexinf$SEX == 2, -30]
+```
+
+## missing data
+
+```{r}
+gsg = goodSamplesGenes(CntrlinfM, verbose=3)
+vis_miss(CntrlinfM)
+if (!gsg$allOK) {
+  CntrlinfM <- CntrlinfM[gsg$goodSamples, gsg$goodGenes]
+}
+vis_miss(CntrlinfM)
+```
+
+## outlier removal
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(CntrlinfM), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+clust = cutreeStatic(sampleTree, cutHeight = 5000, minSize = 10)
+keepSamples = (clust==1)
+CntrlinfM = CntrlinfM[keepSamples, ]
+nGenes = ncol(CntrlinfM)
+nSamples = nrow(CntrlinfM)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(CntrlinfM), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+
+## normalize
+
+```{r}
+# z score
+CntrlinfM=as.data.frame(scale(CntrlinfM))
+
+# boxplot
+boxplot_data=list()
+for(col in colnames(CntrlinfM)){
+  boxplot_data[[col]]=boxplot(CntrlinfM[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+CntrlinfM=apply(CntrlinfM,2,remove_outliers)
+CntrlinfM=as.data.frame(CntrlinfM)
+
+# visualizing missing data
+vis_miss(CntrlinfM)
+
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(CntrlinfM, m = 5, method = 'pmm', maxit = 50, seed = 500)
+CntrlinfM = complete(impute)
+vis_miss(CntrlinfM)
+```
+
+# Control female 
+
+## clean dataframe
+```{r}
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+CntrlinfData = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Inflammatory markers/CBN01_CYTORAWL_DATA_Z3_01_V01_CNTRL.csv")
+Cntrlsex = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/CBN01_DEMO_DATA_Z3_01_V01_CNTRL.csv")
+merge = merge(CntrlinfData, Cntrlsex, on='SUBJLABEL', how='inner')
+Cntrlsexinf = as.data.frame(merge[,-c(1:4,34:35,37:50)])
+Cntrlsexinf = Cntrlsexinf[1:30]
+rownames(Cntrlsexinf) = Cntrlsex$SUBJLABEL
+
+# subset for female
+CntrlinfF <- Cntrlsexinf[Cntrlsexinf$SEX == 1, -30]
+```
+
+## missing data
+
+```{r}
+gsg = goodSamplesGenes(CntrlinfF, verbose=3)
+vis_miss(CntrlinfF)
+if (!gsg$allOK) {
+  CntrlinfF <- CntrlinfF[gsg$goodSamples, gsg$goodGenes]
+}
+vis_miss(CntrlinfF)
+```
+
+## outlier removal
+
+```{r}
+# perform hierarchial clustering
+sampleTree = hclust(dist(CntrlinfF), method = "average");
+
+# plot sample tree
+sizeGrWindow(12,9)
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+clust = cutreeStatic(sampleTree, cutHeight = 5000, minSize = 10)
+keepSamples = (clust==1)
+CntrlinfF = CntrlinfF[keepSamples, ]
+nGenes = ncol(CntrlinfF)
+nSamples = nrow(CntrlinfF)
+
+# visualize
+sampleTree_cleaned <- hclust(dist(CntrlinfF), method = "average")
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+```
+
+
+## normalize
+
+```{r}
+# z score
+CntrlinfF=as.data.frame(scale(CntrlinfF))
+
+# boxplot
+boxplot_data=list()
+for(col in colnames(CntrlinfF)){
+  boxplot_data[[col]]=boxplot(CntrlinfF[[col]],plot=FALSE)$out
+}
+boxplot(boxplot_data,las=2,main="Outliers in each marker", ylab="Values",col="lightblue")
+
+# remove outliers
+remove_outliers=function(x){
+  mean_val=mean(x,na.rm=TRUE)
+  sd_val=sd(x,na.rm=TRUE)
+  lower_limit=mean_val-3*sd_val
+  upper_limit=mean_val+3*sd_val
+  x[which(x<lower_limit | x > upper_limit)]=NA
+  return(x)
+}
+CntrlinfF=apply(CntrlinfF,2,remove_outliers)
+CntrlinfF=as.data.frame(CntrlinfF)
+
+# visualizing missing data
+vis_miss(CntrlinfF)
+
+# perform MICE with 5 imputed datasets, predictive mean matching method, 50 max number of iterations, 500 seed for reproducibility
+impute = mice(CntrlinfF, m = 5, method = 'pmm', maxit = 50, seed = 500)
+CntrlinfF = complete(impute)
+vis_miss(CntrlinfF)
+```
+
+
+```{r}
+save(MDDinfM, MDDinfF, CntrlinfM, CntrlinfF, file = "sex.RData")
+```
