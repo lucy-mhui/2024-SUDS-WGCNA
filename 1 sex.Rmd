@@ -1,0 +1,262 @@
+---
+title: "1 sex consensus"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MDD M vs F
+
+## 0 setup
+```{r}
+# load package
+library(WGCNA)
+library(visdat)
+library(mice)
+
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+lnames = load(file = "/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/sex.RData")
+lnames
+```
+
+## 1a data input
+
+```{r}
+# For easier labeling of plots, create a vector holding descriptive names of the two sets.
+nSets = 2;
+setLabels = c("MDD Male markers", "MDD Female markers")
+shortLabels = c("MDD M", "MDD F")
+
+# Form multi-set expression data: columns starting from 9 contain actual expression data.
+multiExpr = vector(mode = "list", length = nSets)
+
+multiExpr[[1]] = list(data = as.data.frame(MDDinfM))
+rownames(multiExpr[[1]]$data) = rownames(MDDinfM)
+
+multiExpr[[2]] = list(data = as.data.frame(MDDinfF))
+rownames(multiExpr[[2]]$data) = rownames(MDDinfF)
+
+# Check that the data has the correct format for many functions operating on multiple sets:
+exprSize = checkSets(multiExpr)
+```
+
+## 1b data cleaning and outlier removal
+
+Remove missing data 
+
+```{r}
+# check all genes and samples have sufficiently low numbers of missing values
+gsg = goodSamplesGenesMS(multiExpr, verbose=3)
+
+# if return FALSE use the following code to remove offending samples and genes
+if (!gsg$allOK)
+{
+  # print information about removed genes
+  if (sum(!gsg$goodGenes)>0)
+    printFlush(paste("Removing genes:", paste(names(multiExpr[[1]]$data[!gsg$goodGenes]), collapse = ",")))
+  for (set in 1:exprSize$nSets)
+  {
+    if (sum(!gsg$goodSamples[[set]]))
+      printFlush(paste("In set", setLabels[set], "removing samples", paste(rownames(multiExpr[[set]]$data)[!gsg$goodSamples[[set]]], collapse = ",")))
+    # remove the offending genes and samples
+    multiExpr[[set]]$data = multiExpr[[set]]$data[gsg$goodSamples[[set]], gsg$goodGenes]
+  }
+  # update exprSize
+  exprSize = checkSets(multiExpr)
+}
+
+```
+Identify outlier 
+
+```{r}
+# cluster samples on their Euclidean distance, separately in each set
+sampleTrees = list()
+for (set in 1:nSets)
+{
+  sampleTrees[[set]] = hclust(dist(multiExpr[[set]]$data), method = "average")
+}
+
+# dendrograms
+pdf(file = "SampleClustering.pdf", width = 12, height = 12)
+par(mfrow=c(2,1))
+par(mar=c(0,4,2,0))
+for(set in 1:nSets)
+  plot(sampleTrees[[set]], main = paste("Sample clustering on all markers in", setLabels[set]), xlab="", sub="", cex=0.7)
+dev.off()
+```
+
+Remove outlier 
+
+```{r}
+# choose height cut
+cutHeights = c(5000,7000) 
+
+# visualize
+pdf(file = "SampleClustering.pdf", width = 12, height = 12)
+par(mfrow=c(2,1))
+par(mar=c(0,4,2,0))
+for(set in 1:nSets)
+{
+  plot(sampleTrees[[set]], main = paste("Sample clustering on all genes in", setLabels[set]), xlab="", sub="", cex=0.7)
+  abline(h=cutHeights[set], col="red")
+}
+dev.off()
+
+# remove - remove outlier by choice of height cut
+for (set in 1:nSets)
+{
+  # find clusters cut by the line
+  labels = cutreeStatic(sampleTrees[[set]], cutHeight = cutHeights[set])
+  # keep the largest one (labeled by the number 1)
+  keep = (labels == 1)
+  multiExpr[[set]]$data = multiExpr[[set]]$data[keep,]
+}
+collectGarbage()
+```
+
+Check size of leftover data
+
+```{r}
+# check sie of leftover data
+exprSize = checkSets(multiExpr)
+exprSize
+```
+
+## Save
+
+```{r}
+# save relevant data for use in subsequent analysis
+save(multiExpr, nGenes, nSamples, setLabels, shortLabels, exprSize, file = "Consensus-MDDMFdataInput.RData")
+```
+
+
+# Control M vs F
+
+## 0 setup
+```{r}
+# load package
+library(WGCNA)
+library(visdat)
+library(mice)
+
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+lnames = load(file = "/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Sex/sex.RData")
+lnames
+```
+
+## 1a data input
+
+```{r}
+# For easier labeling of plots, create a vector holding descriptive names of the two sets.
+nSets = 2;
+setLabels = c("Control Male markers", "Control Female markers")
+shortLabels = c("Control M", "Control F")
+
+# Form multi-set expression data: columns starting from 9 contain actual expression data.
+multiExpr = vector(mode = "list", length = nSets)
+
+multiExpr[[1]] = list(data = as.data.frame(CntrlinfM))
+rownames(multiExpr[[1]]$data) = rownames(CntrlinfM)
+
+multiExpr[[2]] = list(data = as.data.frame(CntrlinfF))
+rownames(multiExpr[[2]]$data) = rownames(CntrlinfF)
+
+# Check that the data has the correct format for many functions operating on multiple sets:
+exprSize = checkSets(multiExpr)
+```
+
+## 1b data cleaning and outlier removal
+
+Remove missing data 
+
+```{r}
+# check all genes and samples have sufficiently low numbers of missing values
+gsg = goodSamplesGenesMS(multiExpr, verbose=3)
+
+# if return FALSE use the following code to remove offending samples and genes
+if (!gsg$allOK)
+{
+  # print information about removed genes
+  if (sum(!gsg$goodGenes)>0)
+    printFlush(paste("Removing genes:", paste(names(multiExpr[[1]]$data[!gsg$goodGenes]), collapse = ",")))
+  for (set in 1:exprSize$nSets)
+  {
+    if (sum(!gsg$goodSamples[[set]]))
+      printFlush(paste("In set", setLabels[set], "removing samples", paste(rownames(multiExpr[[set]]$data)[!gsg$goodSamples[[set]]], collapse = ",")))
+    # remove the offending genes and samples
+    multiExpr[[set]]$data = multiExpr[[set]]$data[gsg$goodSamples[[set]], gsg$goodGenes]
+  }
+  # update exprSize
+  exprSize = checkSets(multiExpr)
+}
+
+```
+Identify outlier 
+
+```{r}
+# cluster samples on their Euclidean distance, separately in each set
+sampleTrees = list()
+for (set in 1:nSets)
+{
+  sampleTrees[[set]] = hclust(dist(multiExpr[[set]]$data), method = "average")
+}
+
+# dendrograms
+pdf(file = "SampleClustering.pdf", width = 12, height = 12)
+par(mfrow=c(2,1))
+par(mar=c(0,4,2,0))
+for(set in 1:nSets)
+  plot(sampleTrees[[set]], main = paste("Sample clustering on all markers in", setLabels[set]), xlab="", sub="", cex=0.7)
+dev.off()
+```
+
+Remove outlier 
+
+```{r}
+# choose height cut
+cutHeights = c(5000,7000) 
+
+# visualize
+pdf(file = "SampleClustering.pdf", width = 12, height = 12)
+par(mfrow=c(2,1))
+par(mar=c(0,4,2,0))
+for(set in 1:nSets)
+{
+  plot(sampleTrees[[set]], main = paste("Sample clustering on all genes in", setLabels[set]), xlab="", sub="", cex=0.7)
+  abline(h=cutHeights[set], col="red")
+}
+dev.off()
+
+# remove - remove outlier by choice of height cut
+for (set in 1:nSets)
+{
+  # find clusters cut by the line
+  labels = cutreeStatic(sampleTrees[[set]], cutHeight = cutHeights[set])
+  # keep the largest one (labeled by the number 1)
+  keep = (labels == 1)
+  multiExpr[[set]]$data = multiExpr[[set]]$data[keep,]
+}
+collectGarbage()
+```
+
+Check size of leftover data
+
+```{r}
+# check sie of leftover data
+exprSize = checkSets(multiExpr)
+exprSize
+```
+
+## Save
+
+```{r}
+# save relevant data for use in subsequent analysis
+save(multiExpr, nGenes, nSamples, setLabels, shortLabels, exprSize, file = "Consensus-ControlMFdataInput.RData")
+```
