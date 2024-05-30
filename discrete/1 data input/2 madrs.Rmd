@@ -1,0 +1,87 @@
+---
+title: "1 madrs"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MDD
+
+## clean data frame
+
+```{r}
+library(dplyr)
+library(WGCNA)
+options(stringsAsFactors = FALSE)
+
+# import dataframes
+MDDmadrs = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Depression/CBN01_MADRS_DATA_Z3_01_V01_TRTMT.csv")
+
+# select columns
+MDDmadrs = MDDmadrs[,-c(2:4,16)]
+
+# restructure
+traitRows = match(rownames(MDDinfData5), MDDmadrs$SUBJLABEL)
+MDDmadrs1 = MDDmadrs[traitRows, -1]
+rownames(MDDmadrs1) = MDDmadrs[traitRows, 1]
+
+names(MDDmadrs1) <- c("apparent sadness", "concentration difficulties", "inability to feel", "inner tension", "lassitude", "pessimistic thoughts", "reduced appetite", "reduced sleep", "reported sadness", "suicidal thoughts", "overall severity")
+```
+
+## visualize how the clinical traits relate to the sample dendrogram
+
+```{r}
+# white means low value, red means high value, grey means missing entry
+sampleTree2 = hclust(dist(MDDinfData5), method = "average")
+traitColors = numbers2colors(MDDmadrs1, signed = FALSE)
+plotDendroAndColors(sampleTree2, traitColors, groupLabels = names(MDDmadrs1), main = "Sample dendrogram and trait heatmap")
+```
+
+## save
+
+```{r}
+save(MDDinfData5, MDDmadrs1, file = "MDDinfMadrs.RData")
+```
+
+
+
+# Control
+
+## clean data frame
+
+```{r}
+library(dplyr)
+library(WGCNA)
+options(stringsAsFactors = FALSE)
+
+# import dataframes
+Cntrlmadrs = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Depression/CBN01_MADRS_DATA_Z3_01_V01_CNTRL.csv")
+
+# select columns
+Cntrlmadrs = Cntrlmadrs[,-c(2:4,16)]
+
+# restructure
+traitRows = match(rownames(CntrlinfData5), Cntrlmadrs$SUBJLABEL)
+Cntrlmadrs1 = Cntrlmadrs[traitRows, -1]
+rownames(Cntrlmadrs1) = Cntrlmadrs[traitRows, 1]
+
+names(Cntrlmadrs1) <- c("apparent sadness", "concentration difficulties", "inability to feel", "inner tension", "lassitude", "pessimistic thoughts", "reduced appetite", "reduced sleep", "reported sadness", "suicidal thoughts", "overall severity")
+```
+
+## visualize how the clinical traits relate to the sample dendrogram
+
+```{r}
+# white means low value, red means high value, grey means missing entry
+sampleTree2 = hclust(dist(CntrlinfData5), method = "average")
+traitColors = numbers2colors(Cntrlmadrs1, signed = FALSE)
+plotDendroAndColors(sampleTree2, traitColors, groupLabels = names(Cntrlmadrs1), main = "Sample dendrogram and trait heatmap")
+```
+
+## save
+
+```{r}
+save(CntrlinfData5, Cntrlmadrs1, file = "CntrlinfMadrs.RData")
+```
