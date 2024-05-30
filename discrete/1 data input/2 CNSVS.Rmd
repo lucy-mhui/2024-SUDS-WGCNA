@@ -1,0 +1,94 @@
+---
+title: "1 CNSVS"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 2. CNSVS
+
+## 2.a MDD
+
+The baseline MDD CNSVS data is contained in the file `CBN01_CNSVS_DATA_Z3_01_V01_TRTMT.csv` that comes with CAN-BIND-1.
+
+```{r}
+# load package
+library(WGCNA)
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+MDDcnsvs = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input/CNSVS/CBN01_CNSVS_DATA_Z3_01_V01_TRTMT.csv")
+```
+
+`MDDcnsvs` contains 211 subjects with 99 variables. Each row corresponds to a patient and column to a measurement. We now remove auxiliary data and only include clincal domain of the CNS vital sign test.
+
+```{r}
+MDDcnsvs1 = as.data.frame(MDDcnsvs[,c(1, 14:28)])
+```
+
+Form a data frame analogous to expression data that will hold the clinical traits. Recall that N = 195.
+
+```{r}
+traitRows = match(rownames(MDDinfData5), MDDcnsvs1$SUBJLABEL)
+MDDcnsvs2 = MDDcnsvs1[traitRows, -1]
+rownames(MDDcnsvs2) = MDDcnsvs1[traitRows, 1]
+```
+
+We visualize how the clinical traits relate to the sample dendrogram.
+
+```{r}
+# white means low value, red means high value, grey means missing entry
+sampleTree2 = hclust(dist(MDDinfData5), method = "average")
+traitColors = numbers2colors(MDDcnsvs2, signed = FALSE)
+plotDendroAndColors(sampleTree2, traitColors, groupLabels = names(MDDcnsvs2), main = "Sample dendrogram and trait heatmap")
+```
+
+Save results for the next step.
+
+```{r}
+save(MDDinfData5, MDDcnsvs2, file = "MDDinfCNSVS1.RData")
+```
+
+## 2.a Control
+
+The baseline MDD CNSVS data is contained in the file `CBN01_CNSVS_DATA_Z3_01_V01_CNTRL.csv` that comes with CAN-BIND-1.
+
+```{r}
+# load package
+library(WGCNA)
+# do not omit
+options(stringsAsFactors = FALSE)
+# read data set
+Cntrlcnsvs = read.csv("/Users/lucyhui/Downloads/SUDS/Individual/1 data input, cleaning, pre-processing/CNSVS/CBN01_CNSVS_DATA_Z3_01_V01_CNTRL.csv")
+```
+
+```{r}
+Cntrlcnsvs1 = as.data.frame(Cntrlcnsvs[,c(1, 14:28)])
+```
+
+Form a data frame analogous to expression data that will hold the clinical traits.
+
+```{r}
+traitRows = match(rownames(CntrlinfData5), Cntrlcnsvs1$SUBJLABEL)
+Cntrlcnsvs2 = Cntrlcnsvs1[traitRows, -1]
+rownames(Cntrlcnsvs2) = Cntrlcnsvs1[traitRows, 1]
+```
+
+We visualize how the clinical traits relate to the sample dendrogram.
+
+```{r}
+# white means low value, red means high value, grey means missing entry
+sampleTree2 = hclust(dist(CntrlinfData5), method = "average")
+traitColors = numbers2colors(Cntrlcnsvs2, signed = FALSE)
+plotDendroAndColors(sampleTree2, traitColors, groupLabels = names(Cntrlcnsvs2), main = "Sample dendrogram and trait heatmap")
+```
+
+Save results for the next step.
+
+```{r}
+save(CntrlinfData5, Cntrlcnsvs2, file = "CNTRLinfCNSVS1.RData")
+```
+
