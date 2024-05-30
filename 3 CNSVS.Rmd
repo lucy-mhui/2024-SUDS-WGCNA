@@ -1,0 +1,208 @@
+---
+title: "3 CNSVS relating modules to external clinical traits"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MDD CNSVS
+## 0 set up r session
+
+```{r}
+library(WGCNA)
+options(stringsAsFactors=FALSE)
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/1 data input/CNSVS/MDDinfCNSVS1.RData")
+lnames
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-MDD-networkConstruction.RData")
+lnames
+```
+
+## 3a quantifying module trait associations
+
+```{r}
+# define numbers of genes and samples
+nMarkers=ncol(MDDinfData5)
+nSamples=nrow(MDDinfData5)
+
+# recalculate MEs with color labels
+MEs0=moduleEigengenes(MDDinfData5,moduleColors)$eigengenes
+MEs=orderMEs(MEs0)
+moduleTraitCor=cor(MEs,MDDcnsvs2,use="p")
+moduleTraitPvalue=corPvalueStudent(moduleTraitCor,nSamples)
+
+# display correlations and p values
+textMatrix = paste(signif(moduleTraitCor,2), "\n(",
+                   signif(moduleTraitPvalue,1),")",sep="")
+dim(textMatrix)=dim(moduleTraitCor)
+par(mar=c(6,8.5,3,3))
+
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = c("memory", "psychomotor speed","reaction time", "complex attention", "cognitive flexibility", "processing speed", "executive function", "verbal memory", "visual memory", "social acuity", "reasoning domain", "working memory", "sustained attention", "simple attention", "motor speed"),
+               yLabels = names(MEs),
+               ySymbols = names(MEs),
+               colorLabels = FALSE,
+               colors = greenWhiteRed(50),
+               textMatrix = textMatrix,
+               setStdMargins = FALSE,
+               cex.text = 0.5,
+               zlim = c(-1,1),
+               main = paste("Module-trait relationships"))
+```
+
+## 3b gene relationship to trait and important modules: Gene Significance and Module Membership
+
+Quantify associations of individual inflammatory markers with trait of interest by defining Gene Significance as the absolute value of the correlation between inflammatory marker and the trait. For each module we also define a quantitative measure of module membership MM as the correlation of the module eigengene and the gene expression profile. This allows us to quantify the similarity of all genes on the array to every module.
+
+```{r}
+# Define variable executive function containing the weight column of MDDcnsvs2
+ef = as.data.frame(MDDcnsvs2$executive_functioning_domain_ss);
+names(ef) = "executive function"
+
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+
+geneModuleMembership = as.data.frame(cor(MDDcnsvs2, MEs, use = "p"));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+
+geneTraitSignificance = as.data.frame(cor(MDDcnsvs2, ef, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+
+names(geneTraitSignificance) = paste("GS.", names(ef), sep="");
+names(GSPvalue) = paste("p.GS.", names(ef), sep="");
+
+```
+
+## 3c intramodular analysis: identifying genes with high GS and MM
+
+See if GS and MM are highly correlated, which means that markers highly significantly associated with a trait are the most important elements of modules associated with the trait.
+
+```{r}
+module = "turquoise"
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+
+sizeGrWindow(7, 7);
+par(mfrow = c(1,1));
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+                   abs(geneTraitSignificance[moduleGenes, 1]),
+                   xlab = paste("Module Membership in", module, "module"),
+                   ylab = "Marker significance for executive",
+                   main = paste("Module membership vs. marker significance\n"),
+                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
+
+```
+
+## 3d summary output of network analysis results
+
+```{r}
+MDDmodules = data.frame(markers = names(MDDinfData5),
+                        module = moduleColors)
+
+write.csv(MDDmodules, file = "MDDmodules.csv")
+```
+
+
+# Control CNSVS
+## 0 set up r session
+
+```{r}
+library(WGCNA)
+options(stringsAsFactors=FALSE)
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/1 data input/CNSVS/CNTRLinfCNSVS1.RData")
+lnames
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-Control-networkConstruction.RData")
+lnames
+```
+
+## 3a quantifying module trait associations
+
+```{r}
+# define numbers of genes and samples
+nMarkers=ncol(CntrlinfData5)
+nSamples=nrow(CntrlinfData5)
+
+# recalculate MEs with color labels
+MEs0=moduleEigengenes(CntrlinfData5,moduleColors)$eigengenes
+MEs=orderMEs(MEs0)
+moduleTraitCor=cor(MEs,Cntrlcnsvs2,use="p")
+moduleTraitPvalue=corPvalueStudent(moduleTraitCor,nSamples)
+
+# display correlations and p values
+textMatrix = paste(signif(moduleTraitCor,2), "\n(",
+                   signif(moduleTraitPvalue,1),")",sep="")
+dim(textMatrix)=dim(moduleTraitCor)
+par(mar=c(6,8.5,3,3))
+
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = c("memory", "psychomotor speed","reaction time", "complex attention", "cognitive flexibility", "processing speed", "executive function", "verbal memory", "visual memory", "social acuity", "reasoning domain", "working memory", "sustained attention", "simple attention", "motor speed"),
+               yLabels = names(MEs),
+               ySymbols = names(MEs),
+               colorLabels = FALSE,
+               colors = greenWhiteRed(50),
+               textMatrix = textMatrix,
+               setStdMargins = FALSE,
+               cex.text = 0.5,
+               zlim = c(-1,1),
+               main = paste("Module-trait relationships"))
+```
+
+## 3b gene relationship to trait and important modules: Gene Significance and Module Membership
+
+Quantify associations of individual inflammatory markers with trait of interest by defining Gene Significance as the absolute value of the correlation between inflammatory marker and the trait. For each module we also define a quantitative measure of module membership MM as the correlation of the module eigengene and the gene expression profile. This allows us to quantify the similarity of all genes on the array to every module.
+
+```{r}
+# Define variable executive function containing the weight column of MDDcnsvs2
+ef = as.data.frame(Cntrlcnsvs2$executive_functioning_domain_ss);
+names(ef) = "executive function"
+
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+
+geneModuleMembership = as.data.frame(cor(Cntrlcnsvs2, MEs, use = "p"));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+
+geneTraitSignificance = as.data.frame(cor(Cntrlcnsvs2, ef, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+
+names(geneTraitSignificance) = paste("GS.", names(ef), sep="");
+names(GSPvalue) = paste("p.GS.", names(ef), sep="");
+
+```
+
+## 3c intramodular analysis: identifying genes with high GS and MM
+
+See if GS and MM are highly correlated, which means that markers highly significantly associated with a trait are the most important elements of modules associated with the trait.
+
+```{r}
+module = "blue"
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+
+sizeGrWindow(7, 7);
+par(mfrow = c(1,1));
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+                   abs(geneTraitSignificance[moduleGenes, 1]),
+                   xlab = paste("Module Membership in", module, "module"),
+                   ylab = "Marker significance for executive",
+                   main = paste("Module membership vs. marker significance\n"),
+                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
+
+```
+
+## 3d summary output of network analysis results
+
+```{r}
+Cntrlmodules = data.frame(markers = names(CntrlinfData5),
+                        module = moduleColors)
+
+write.csv(Cntrlmodules, file = "Cntrlmodules.csv")
+```

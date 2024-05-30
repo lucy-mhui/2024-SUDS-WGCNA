@@ -1,0 +1,223 @@
+---
+title: "3 madrs"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MDD
+
+## setup
+
+```{r}
+library(WGCNA)
+options(stringsAsFactors=FALSE)
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Depression subcomponents/MDDinfMadrs.RData")
+lnames
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-MDD-networkConstruction.RData")
+lnames
+```
+
+## 3a quantifying module trait associations
+
+```{r}
+# define numbers of genes and samples
+nMarkers=ncol(MDDinfData5)
+nSamples=nrow(MDDinfData5)
+
+# recalculate MEs with color labels
+MEs0=moduleEigengenes(MDDinfData5,moduleColors)$eigengenes
+MEs=orderMEs(MEs0)
+moduleTraitCor=cor(MEs,MDDmadrs1,use="p")
+moduleTraitPvalue=corPvalueStudent(moduleTraitCor,nSamples)
+
+# display correlations and p values
+textMatrix = paste(signif(moduleTraitCor,2), "\n(",
+                   signif(moduleTraitPvalue,1),")",sep="")
+dim(textMatrix)=dim(moduleTraitCor)
+par(mar=c(6,8.5,3,3))
+
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = names(MDDmadrs1),
+               yLabels = names(MEs),
+               ySymbols = names(MEs),
+               colorLabels = FALSE,
+               colors = blueWhiteRed(50),
+               textMatrix = textMatrix,
+               setStdMargins = FALSE,
+               cex.text = 0.5,
+               zlim = c(-1,1),
+               main = paste("Module-trait relationships"))
+```
+
+## 3b gene relationship to trait and important modules: Gene Significance and Module Membership
+
+```{r}
+ef = as.data.frame(MDDmadrs1$`reported sadness`);
+names(ef) = "reported sadness"
+
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+
+geneModuleMembership = as.data.frame(cor(MDDmadrs1, MEs, use = "p"));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+
+geneTraitSignificance = as.data.frame(cor(MDDmadrs1, ef, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+
+names(geneTraitSignificance) = paste("GS.", names(ef), sep="");
+names(GSPvalue) = paste("p.GS.", names(ef), sep="");
+
+```
+
+## 3c intramodular analysis: identifying genes with high GS and MM
+
+See if GS and MM are highly correlated, which means that markers highly significantly associated with a trait are the most important elements of modules associated with the trait.
+
+```{r}
+module = "blue"
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+
+sizeGrWindow(7, 7);
+par(mfrow = c(1,1));
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+                   abs(geneTraitSignificance[moduleGenes, 1]),
+                   xlab = paste("Module Membership in", module, "module"),
+                   ylab = "Marker significance for executive",
+                   main = paste("Module membership vs. marker significance\n"),
+                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
+
+```
+
+## 3d visualize
+
+visualize network of eigengenes
+
+```{r}
+# Recalculate module eigengenes
+MEs = moduleEigengenes(MDDinfData5, moduleColors)$eigengenes
+# Isolate weight from the clinical traits
+ef = as.data.frame(MDDmadrs1$`reported sadness`);
+names(ef) = "reported sadness"
+# Add the weight to existing module eigengenes
+MET = orderMEs(cbind(MEs, ef))
+# Plot the relationships among the eigengenes and the trait
+sizeGrWindow(5,7.5);
+par(cex = 0.9)
+plotEigengeneNetworks(MET, "", marDendro = c(0,4,1,2), marHeatmap = c(3,4,1,2), cex.lab = 0.8, xLabelsAngle
+= 90)
+```
+
+# Control
+
+## setup
+
+```{r}
+library(WGCNA)
+options(stringsAsFactors=FALSE)
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/1 data input/Depression subcomponents/CntrlinfMadrs.RData")
+lnames
+lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-Control-networkConstruction.RData")
+lnames
+```
+
+## 3a quantifying module trait associations
+
+```{r}
+# define numbers of genes and samples
+nMarkers=ncol(CntrlinfData5)
+nSamples=nrow(CntrlinfData5)
+
+# recalculate MEs with color labels
+MEs0=moduleEigengenes(CntrlinfData5,moduleColors)$eigengenes
+MEs=orderMEs(MEs0)
+moduleTraitCor=cor(MEs,Cntrlmadrs1,use="p")
+moduleTraitPvalue=corPvalueStudent(moduleTraitCor,nSamples)
+
+# display correlations and p values
+textMatrix = paste(signif(moduleTraitCor,2), "\n(",
+                   signif(moduleTraitPvalue,1),")",sep="")
+dim(textMatrix)=dim(moduleTraitCor)
+par(mar=c(6,8.5,3,3))
+
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = names(Cntrlmadrs1),
+               yLabels = names(MEs),
+               ySymbols = names(MEs),
+               colorLabels = FALSE,
+               colors = blueWhiteRed(50),
+               textMatrix = textMatrix,
+               setStdMargins = FALSE,
+               cex.text = 0.5,
+               zlim = c(-1,1),
+               main = paste("Module-trait relationships"))
+```
+
+## 3b gene relationship to trait and important modules: Gene Significance and Module Membership
+
+```{r}
+ef = as.data.frame(Cntrlmadrs1$`reported sadness`);
+names(ef) = "reported sadness"
+
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+
+geneModuleMembership = as.data.frame(cor(Cntrlmadrs1, MEs, use = "p"));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+
+geneTraitSignificance = as.data.frame(cor(Cntrlmadrs1, ef, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+
+names(geneTraitSignificance) = paste("GS.", names(ef), sep="");
+names(GSPvalue) = paste("p.GS.", names(ef), sep="");
+
+```
+
+## 3c intramodular analysis: identifying genes with high GS and MM
+
+See if GS and MM are highly correlated, which means that markers highly significantly associated with a trait are the most important elements of modules associated with the trait.
+
+```{r}
+module = "blue"
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+
+sizeGrWindow(7, 7);
+par(mfrow = c(1,1));
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+                   abs(geneTraitSignificance[moduleGenes, 1]),
+                   xlab = paste("Module Membership in", module, "module"),
+                   ylab = "Marker significance for executive",
+                   main = paste("Module membership vs. marker significance\n"),
+                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
+
+```
+
+## 3d visualize
+
+visualize network of eigengenes
+
+```{r}
+# Recalculate module eigengenes
+MEs = moduleEigengenes(CntrlinfData5, moduleColors)$eigengenes
+# Isolate weight from the clinical traits
+ef = as.data.frame(Cntrlmadrs1$`reported sadness`);
+names(ef) = "reported sadness"
+# Add the weight to existing module eigengenes
+MET = orderMEs(cbind(MEs, ef))
+# Plot the relationships among the eigengenes and the trait
+sizeGrWindow(5,7.5);
+par(cex = 0.9)
+plotEigengeneNetworks(MET, "", marDendro = c(0,4,1,2), marHeatmap = c(3,4,1,2), cex.lab = 0.8, xLabelsAngle
+= 90)
+```
