@@ -35,7 +35,13 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 │   │     ├── inflammatory-module_madrs.R                                   # associate inflammatory modules with depression subcomponents
 │   │     ├── sex_madrs_data-input.R                                        # associate inflammatory modules with depression subcomponents separate for male and female
 ├── 3 dMRI
+│   ├── 3.1 descriptive statistics
+│   │     ├── rename_ROI.R                                                  # rename ROIs to legible format 
+│   │     ├── dMRI_data-input.R                                             # data processing for dMRI measures 
+│   │     ├── sex_dMRI_data-input                                           # data processing for dMRI measures for male and female
+│   ├── 3.2 module creation
 │   │     ├── dMRI_parameters.R                                             # associate inflammatory modules with dMRI measures
+│   │     ├── dMRI_sex_modules.R                                            # associate inflammatory modules with dMRI measures separate for male and female
 ├── 4 outcomes                                                       
 └── ...
 ```
