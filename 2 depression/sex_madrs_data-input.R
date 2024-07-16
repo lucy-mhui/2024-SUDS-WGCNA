@@ -7,7 +7,7 @@ lnames=load(file="/.../CntrlinfMadrs.RData")
 lnames = load(file = "/.../sex.RData")
 
 # MDDinfM
-lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-MDDinfM-networkConstruction.RData")
+lnames=load(file="/.../02-MDDinfM-networkConstruction.RData")
 
 common_row_names <- intersect(rownames(MDDinfM), rownames(MDDmadrs1))
 MDDmadrsM <- MDDmadrs1[common_row_names, , drop = FALSE]
@@ -41,7 +41,7 @@ library(dplyr)
 ME_MDD_M = MEs %>% mutate(Gender = "M")
 
 # MDDinfF
-lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-MDDinfF-networkConstruction.RData")
+lnames=load(file="/.../02-MDDinfF-networkConstruction.RData")
 
 common_row_names <- intersect(rownames(MDDinfF), rownames(MDDmadrs1))
 MDDmadrsF <- MDDmadrs1[common_row_names, , drop = FALSE]
@@ -75,7 +75,7 @@ library(dplyr)
 ME_MDD_F = MEs %>% mutate(Gender = "F")
 
 # CntrlinfM
-lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-CntrlInfM-networkConstruction.RData")
+lnames=load(file="/.../02-CntrlInfM-networkConstruction.RData")
 
 common_row_names <- intersect(rownames(CntrlinfM), rownames(Cntrlmadrs1))
 CntrlmadrsM <- Cntrlmadrs1[common_row_names, , drop = FALSE]
@@ -107,7 +107,7 @@ labeledHeatmap(Matrix = moduleTraitCor,
                main = paste("Module-trait relationships"))
 
 # CntrlinfF
-lnames=load(file="/Users/lucyhui/Downloads/SUDS/Individual/2 module detection/02-CntrlInfF-networkConstruction.RData")
+lnames=load(file="/.../02-CntrlInfF-networkConstruction.RData")
 
 common_row_names <- intersect(rownames(CntrlinfF), rownames(Cntrlmadrs1))
 CntrlmadrsF <- Cntrlmadrs1[common_row_names, , drop = FALSE]
