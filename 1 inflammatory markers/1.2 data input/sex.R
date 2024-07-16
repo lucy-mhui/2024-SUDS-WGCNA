@@ -38,7 +38,8 @@ sampleTree = hclust(dist(MDDinfM), method = "average");
 sizeGrWindow(12,9)
 par(cex = 0.6);
 par(mar = c(0,4,2,0))
-plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+plot(sampleTree, main = "Sample clustering to detect outliers", 
+     sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 
 clust = cutreeStatic(sampleTree, cutHeight = 4000, minSize = 10)
 keepSamples = (clust==1)
@@ -48,7 +49,8 @@ nSamples = nrow(MDDinfM)
 
 # visualize
 sampleTree_cleaned <- hclust(dist(MDDinfM), method = "average")
-plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+plot(sampleTree_cleaned, main = "Sample Clustering After Outlier Removal", 
+     sub = "", xlab = "Samples", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 
 # z normalize
 MDDinfM=as.data.frame(scale(MDDinfM))
