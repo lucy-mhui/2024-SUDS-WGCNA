@@ -20,17 +20,20 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 ```
 ├── 1 inflammatory markers            
 │   ├── 1.1 descriptive statistics
-│   │     ├── MDD-Control_sex-differences_anova.R                           # two way anova (inflammatory marker ~ group * sex)
 │   │     ├── MDD_vs_Control_differences.R                                  # visualize group differences
 │   │     ├── sex-differences.R                                             # visualize sex differences 
 │   │     ├── sex_inflammation_depression_correlationmatrix.R               # correlation matrix (inflammatory marker ~ depression)
+│   │     ├── MDD-Control_sex-differences_anova.R                           # two way anova (inflammatory marker ~ group * sex)
 │   ├── 1.2 data input
 │   │     ├── inflammatory markers.R                                        # data processing for inflammatory markers
 │   │     ├── sex.R                                                         # data processing for inflammatory makers for male and female
 │   ├── 1.3 module creation
 │   │     ├── inflammatory markers.R                                        # module detection for inflammatory markers 
 │   │     ├── sex.R                                                         # module detection for inflammatory markers separate for male and female  
-├── 2 depression                     
+├── 2 depression
+│   │     ├── madrs_data-input.R                                            # data processing for madrs depression subcomponents
+│   │     ├── inflammatory-module_madrs.R                                   # associate inflammatory modules with depression subcomponents
+│   │     ├── sex_madrs_data-input.R                                        # associate inflammatory modules with depression subcomponents separate for male and female
 ├── 3 dMRI
 ├── 4 outcomes                                                       
 └── ...
