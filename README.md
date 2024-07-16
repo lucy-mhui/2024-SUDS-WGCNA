@@ -18,4 +18,5 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 
 # References and resources
 1. Miller, A., Raison, C. The role of inflammation in depression: from evolutionary imperative to modern treatment target. Nat Rev Immunol 16, 22–34 (2016). https://doi.org/10.1038/nri.2015.5
-2. Horvath WGCNA tutorial: https://www.dropbox.com/scl/fo/4vqfiysan6rlurfo2pbnk/h?rlkey=thqg8wlpdn4spu3ihjuc1kmlu&e=2&dl=0 
+2. Horvath WGCNA tutorial: https://www.dropbox.com/scl/fo/4vqfiysan6rlurfo2pbnk/h?rlkey=thqg8wlpdn4spu3ihjuc1kmlu&e=2&dl=0
+3. CAN-BIND-1 description: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6606427/
