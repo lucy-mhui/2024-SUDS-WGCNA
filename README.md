@@ -26,7 +26,10 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 │   │     ├── sex_inflammation_depression_correlationmatrix.R               # correlation matrix (inflammatory marker ~ depression)
 │   ├── 1.2 data input
 │   │     ├── inflammatory markers.R                                        # data processing for inflammatory markers
-│   │     ├── sex.R                                                         # data processing for inflammatory makers for male and female               
+│   │     ├── sex.R                                                         # data processing for inflammatory makers for male and female
+│   ├── 1.3 module creation
+│   │     ├── inflammatory markers.R                                        # module detection for inflammatory markers 
+│   │     ├── sex.R                                                         # module detection for inflammatory markers separate for male and female  
 ├── 2 depression                     
 ├── 3 dMRI
 ├── 4 outcomes                                                       
