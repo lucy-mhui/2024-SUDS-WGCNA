@@ -1,0 +1,124 @@
+# data frames
+MDDsex = read.csv("/.../CBN01_DEMO_DATA_Z3_01_V01_TRTMT.csv")
+cdi_lnames=load(file="/.../cdi.RData")
+dtiFA_lnames=load(file="/.../dtiFA.RData")
+dtiMD_lnames=load(file="/.../dtiMD.RData")
+F_lnames=load(file="/.../F.RData")
+FAt_lnames=load(file="/.../FAt.RData")
+FDt_lnames=load(file="/.../MDt.RData")
+
+# DTI SUBJ labels
+dataframes <- list(MDD_cdi_mean, MDD_dti_FA_mean, MDD_dti_MD_mean, MDD_F_mean, MDD_FAt_mean, MDD_MD_t_mean)
+df_names <- c("MDD_cdi_mean", "MDD_dti_FA_mean", "MDD_dti_MD_mean", "MDD_F_mean", "MDD_FAt_mean", "MDD_MD_t_mean")
+
+process_dataframe <- function(df) {
+  new_row_names <- gsub("^CBN01_", "", rownames(df))
+  rownames(df) <- new_row_names
+  
+  if ("SUBJ" %in% colnames(df)) {
+    rownames(df) <- df$SUBJ
+    df <- df[, -which(colnames(df) == "SUBJ")]
+  }
+  
+  new_row_names <- gsub("_01$", "", rownames(df), perl = TRUE)
+  rownames(df) <- new_row_names
+  
+  return(df)
+}
+
+modified_dataframes <- lapply(dataframes, process_dataframe)
+names(modified_dataframes) <- df_names
+
+MDD_cdi_mean <- modified_dataframes[["MDD_cdi_mean"]]
+MDD_dti_FA_mean <- modified_dataframes[["MDD_dti_FA_mean"]]
+MDD_dti_MD_mean <- modified_dataframes[["MDD_dti_MD_mean"]]
+MDD_F_mean <- modified_dataframes[["MDD_F_mean"]]
+MDD_FAt_mean <- modified_dataframes[["MDD_FAt_mean"]]
+MDD_MD_t_mean <- modified_dataframes[["MDD_MD_t_mean"]]
+
+# sex SUBJ labels
+rownames(MDDsex) <- MDDsex$SUBJLABEL
+MDDsex <- MDDsex[, -1]
+new_row_names <- gsub("^CBN01_", "", rownames(MDDsex))
+rownames(MDDsex) <- new_row_names
+MDDsex=MDDsex[, "SEX", drop = FALSE]
+
+# subset by SUBJ
+rownames_to_keep <- rownames(MDD_cdi_mean)
+MDDsexcdi <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexcdi) <- rownames(MDDsexcdi)[rownames(MDDsexcdi) %in% rownames_to_keep]
+
+rownames_to_keep <- rownames(MDD_dti_FA_mean)
+MDDsexdti_FA <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexdti_FA) <- rownames(MDDsexdti_FA)[rownames(MDDsexdti_FA) %in% rownames_to_keep]
+
+rownames_to_keep <- rownames(MDD_dti_MD_mean)
+MDDsexdti_MD <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexdti_MD) <- rownames(MDDsexdti_MD)[rownames(MDDsexdti_MD) %in% rownames_to_keep]
+
+rownames_to_keep <- rownames(MDD_F_mean)
+MDDsexF <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexF) <- rownames(MDDsexF)[rownames(MDDsexF) %in% rownames_to_keep]
+
+rownames_to_keep <- rownames(MDD_FAt_mean)
+MDDsexFAt <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexFAt) <- rownames(MDDsexFAt)[rownames(MDDsexFAt) %in% rownames_to_keep]
+
+rownames_to_keep <- rownames(MDD_MD_t_mean)
+MDDsexMD_t <- MDDsex[rownames(MDDsex) %in% rownames_to_keep, , drop = FALSE]
+rownames(MDDsexMD_t) <- rownames(MDDsexMD_t)[rownames(MDDsexMD_t) %in% rownames_to_keep]
+
+# merge data frames
+MDD_cdi_mean <- merge(MDDsexcdi, MDD_cdi_mean, by = "row.names", all = TRUE)
+MDD_dti_FA_mean <- merge(MDDsexdti_FA, MDD_dti_FA_mean, by = "row.names", all = TRUE)
+MDD_dti_MD_mean <- merge(MDDsexdti_MD, MDD_dti_MD_mean, by = "row.names", all = TRUE)
+MDD_F_mean <- merge(MDDsexF, MDD_F_mean, by = "row.names", all = TRUE)
+MDD_FAt_mean <- merge(MDDsexFAt, MDD_FAt_mean, by = "row.names", all = TRUE)
+MDD_MD_t_mean <- merge(MDDsexMD_t, MDD_MD_t_mean, by = "row.names", all = TRUE)
+
+rownames(MDD_cdi_mean) <- MDD_cdi_mean$Row.names
+rownames(MDD_dti_FA_mean) <- MDD_dti_FA_mean$Row.names
+rownames(MDD_dti_MD_mean) <- MDD_dti_MD_mean$Row.names
+rownames(MDD_F_mean) <- MDD_F_mean$Row.names
+rownames(MDD_FAt_mean) <- MDD_FAt_mean$Row.names
+rownames(MDD_MD_t_mean) <- MDD_MD_t_mean$Row.names
+
+MDD_cdi_mean = MDD_cdi_mean[,-1]
+MDD_dti_FA_mean = MDD_dti_FA_mean[,-1]
+MDD_dti_MD_mean = MDD_dti_MD_mean[,-1]
+MDD_F_mean = MDD_F_mean[,-1]
+MDD_FAt_mean = MDD_FAt_mean[,-1]
+MDD_MD_t_mean = MDD_MD_t_mean[,-1]
+
+# subset into male (2) and female (1)
+MDD_cdi_F = MDD_cdi_mean[MDD_cdi_mean$SEX==1,]
+MDD_dti_FA_F = MDD_dti_FA_mean[MDD_dti_FA_mean$SEX==1,]
+MDD_dti_MD_F = MDD_dti_MD_mean[MDD_dti_MD_mean$SEX==1,]
+MDD_F_F = MDD_F_mean[MDD_F_mean$SEX==1,]
+MDD_FAt_F = MDD_FAt_mean[MDD_FAt_mean$SEX==1,]
+MDD_MD_t_F = MDD_MD_t_mean[MDD_MD_t_mean$SEX==1,]
+
+MDD_cdi_M = MDD_cdi_mean[MDD_cdi_mean$SEX==2,]
+MDD_dti_FA_M = MDD_dti_FA_mean[MDD_dti_FA_mean$SEX==2,]
+MDD_dti_MD_M = MDD_dti_MD_mean[MDD_dti_MD_mean$SEX==2,]
+MDD_F_M = MDD_F_mean[MDD_F_mean$SEX==2,]
+MDD_FAt_M = MDD_FAt_mean[MDD_FAt_mean$SEX==2,]
+MDD_MD_t_M = MDD_MD_t_mean[MDD_MD_t_mean$SEX==2,]
+
+MDD_cdi_F = MDD_cdi_F[,-1]
+MDD_dti_FA_F = MDD_dti_FA_F[,-1]
+MDD_dti_MD_F = MDD_dti_MD_F[,-1]
+MDD_F_F = MDD_F_F[,-1]
+MDD_FAt_F = MDD_FAt_F[,-1]
+MDD_MD_t_F = MDD_MD_t_F[,-1]
+
+MDD_cdi_M = MDD_cdi_M[,-1]
+MDD_dti_FA_M = MDD_dti_FA_M[,-1]
+MDD_dti_MD_M = MDD_dti_MD_M[,-1]
+MDD_F_M = MDD_F_M[,-1]
+MDD_FAt_M = MDD_FAt_M[,-1]
+MDD_MD_t_M = MDD_MD_t_M[,-1]
+
+# save 
+save(MDD_cdi_F, MDD_dti_FA_F, MDD_dti_MD_F, MDD_F_F, MDD_FAt_F, MDD_MD_t_F, file = "dtiF.RData")
+save(MDD_cdi_M, MDD_dti_FA_M, MDD_dti_MD_M, MDD_F_M, MDD_FAt_M, MDD_MD_t_M, file = "dtiM.RData")
