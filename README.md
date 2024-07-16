@@ -14,16 +14,16 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 
 # Github code structure
 ```
- .
-├── ...
-├── docs                    # Documentation files (alternatively `doc`)
-│   ├── TOC.md              # Table of contents
-│   ├── faq.md              # Frequently asked questions
-│   ├── misc.md             # Miscellaneous information
-│   ├── usage.md            # Getting started guide
-│   └── ...                 # etc.
+├── 1 inflammatory markers             # Documentation files (alternatively `doc`)
+│   ├── 1.1 descriptive statistics     # Table of contents
+│   ├── 1.2 data input                 # Frequently asked questions
+├── 2 depression                       # Documentation files (alternatively `doc`)
+├── 3 dMRI                             # Documentation files (alternatively `doc`)
 └── ...
 ```
+
+# Methods
+* 
 
 # References and resources
 1. Miller, A., Raison, C. The role of inflammation in depression: from evolutionary imperative to modern treatment target. Nat Rev Immunol 16, 22–34 (2016). https://doi.org/10.1038/nri.2015.5
