@@ -2,8 +2,9 @@
 
 
 
-
-# data frame processing 
+#########################
+# data frame processing #
+#########################
 
 # load libraries
 library(WGCNA)
@@ -60,8 +61,9 @@ MDDinfF = complete(impute)
 
 
 
-
-# prepare data frame for t-test 
+#################################
+# prepare data frame for t-test #
+#################################
 
 # calculate average for inflammatory markers for MDDinfM and MDDinfF 
 MDDinfMmean = colMeans(MDDinfM)
@@ -94,8 +96,9 @@ colnames(sex) = c("marker", "sex", "measurement")
 
 
 
-
-# t-test
+##########
+# t-test #
+##########
 
 # load libraries
 library(dplyr)
@@ -148,8 +151,9 @@ print(t_test_results)
 
 
 
-
-# bargraph
+############
+# bargraph #
+############
 
 # load libraries
 library(ggplot2)
@@ -197,8 +201,9 @@ print(combined_plot)
 
 
 
-
-# Bargraph for differences between average male marker levels and average female marker levels
+################################################################################################
+# Bargraph for differences between average male marker levels and average female marker levels #
+################################################################################################
 
 # Load necessary library
 library(dplyr)
@@ -221,8 +226,9 @@ print(p)
 
 
 
-
-# Histogram for male and female levels of inflammatory markers 
+################################################################
+# Histogram for male and female levels of inflammatory markers #
+################################################################
 
 # Load necessary libraries
 library(ggplot2)
