@@ -42,7 +42,9 @@ About 76% of the genes were found to form five co-expression modules in the MDD 
 │   ├── 3.2 module creation
 │   │     ├── dMRI_parameters.R                                             # associate inflammatory modules with dMRI measures
 │   │     ├── dMRI_sex_modules.R                                            # associate inflammatory modules with dMRI measures separate for male and female
-├── 4 outcomes                                                       
+├── 4 outcomes
+│   ├── WGCNA&CANBIND1_Poster.pdf
+│   ├── WGCNA&CANBIND1_Poster.ppt                                                                                                     
 └── ...
 ```
 
